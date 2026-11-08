@@ -48,16 +48,16 @@
             android:layout_height="wrap_content">
 
             <RadioButton
-                android:id="@+id/mode_flash"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/mode_flash" />
-
-            <RadioButton
                 android:id="@+id/mode_takeover"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/mode_takeover" />
+
+            <RadioButton
+                android:id="@+id/mode_flash"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/mode_flash" />
 
             <RadioButton
                 android:id="@+id/mode_passive"

@@ -29,7 +29,7 @@ class Prefs(context: Context) {
 
     var mode: DisplayMode
         get() = runCatching { DisplayMode.valueOf(sp.getString(KEY_MODE, null)!!) }
-            .getOrDefault(DisplayMode.FLASH)
+            .getOrDefault(DisplayMode.TAKEOVER)
         set(v) = sp.edit().putString(KEY_MODE, v.name).apply()
 
     var debugLog: Boolean
