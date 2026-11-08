@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.fuzzyfly0.navbtdisplay"
-        minSdk = 26
+        minSdk = 29
         targetSdk = 37
         versionCode = 1
         versionName = "0.1.0"
