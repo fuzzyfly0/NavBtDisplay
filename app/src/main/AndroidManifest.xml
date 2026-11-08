@@ -4,17 +4,7 @@
     <!-- Only used to show "installed / not installed" next to each navigation app. -->
     <queries>
         <package android:name="com.google.android.apps.maps" />
-        <package android:name="com.waze" />
-        <package android:name="net.osmand" />
-        <package android:name="net.osmand.plus" />
-        <package android:name="net.osmand.dev" />
-        <package android:name="app.organicmaps" />
-        <package android:name="app.organicmaps.beta" />
-        <package android:name="app.organicmaps.debug" />
-        <package android:name="app.comaps" />
-        <package android:name="app.comaps.fdroid" />
-        <package android:name="app.comaps.debug" />
-        <package android:name="com.here.app.maps" />
+        <package android:name="cz.seznam.mapy" />
     </queries>
 
     <application
