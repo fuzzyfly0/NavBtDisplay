@@ -103,8 +103,8 @@ object NavPublisher {
         setMetadata(
             CarText(
                 title = appContext.getString(R.string.test_hint_title),
-                artist = appContext.getString(R.string.app_name),
-                album = appContext.getString(R.string.app_name),
+                artist = appContext.getString(R.string.test_hint_artist),
+                album = appContext.getString(R.string.test_hint_album),
                 maneuverKey = "test",
             ),
         )

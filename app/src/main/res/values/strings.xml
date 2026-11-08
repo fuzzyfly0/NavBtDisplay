@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Nav BT Display</string>
-    <string name="test_hint_title">Test: in 200 m turn right</string>
+    <string name="test_hint_title">200 m · Turn right (test)</string>
+    <string name="test_hint_artist">Main Street</string>
+    <string name="test_hint_album">12 min · 5.3 km · ETA 18:34</string>
 
     <string name="section_access">Notification access</string>
     <string name="access_granted">Granted – navigation notifications can be read.</string>
