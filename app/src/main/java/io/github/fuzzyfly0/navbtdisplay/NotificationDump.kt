@@ -49,6 +49,37 @@ object NotificationDump {
     }
 
     /**
+     * Whether [sbn] can be a running-guidance notification at all: navigation
+     * apps also post other notifications (downloads, trip summaries, ...).
+     */
+    fun isGuidanceCandidate(sbn: StatusBarNotification): Boolean {
+        val n = sbn.notification
+        if (n.flags and Notification.FLAG_GROUP_SUMMARY != 0) return false
+        return n.flags and Notification.FLAG_ONGOING_EVENT != 0 ||
+            n.category == Notification.CATEGORY_NAVIGATION
+    }
+
+    /** The raw text fields; RemoteViews are only inflated when the extras carry no text. */
+    fun fields(context: Context, sbn: StatusBarNotification): RawNavFields {
+        val n = sbn.notification
+        val e = n.extras
+        fun cs(key: String) = e.getCharSequence(key)?.toString()
+        val raw = RawNavFields(
+            title = cs(Notification.EXTRA_TITLE_BIG) ?: cs(Notification.EXTRA_TITLE),
+            text = cs(Notification.EXTRA_TEXT),
+            bigText = cs(Notification.EXTRA_BIG_TEXT),
+            subText = cs(Notification.EXTRA_SUB_TEXT),
+            infoText = cs(Notification.EXTRA_INFO_TEXT),
+        )
+        if (!NavText.clean(raw.title).isNullOrEmpty() || !NavText.clean(raw.text).isNullOrEmpty()) {
+            return raw
+        }
+        @Suppress("DEPRECATION")
+        val rv = n.bigContentView ?: n.contentView ?: return raw
+        return raw.copy(viewTexts = remoteViewsTexts(context, rv).filterNot { it.startsWith("<inflate") })
+    }
+
+    /**
      * Inflates [rv] off-screen and collects the text of all visible TextViews.
      * Some navigation apps only draw their guidance into a custom layout.
      */
