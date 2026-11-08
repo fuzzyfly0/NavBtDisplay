@@ -9,10 +9,14 @@ navigation app and publishes its text as "now playing" metadata, so the car
 shows e.g.
 
 ```
-Title:  300 m · Turn right onto Main St
-Artist: 12 min · 5.3 km
-Album:  Google Maps
+Title:  300 m · Turn right          (distance + maneuver)
+Artist: Main St                     (street / direction)
+Album:  12 min · 5.3 km · ETA 18:34 (trip summary)
 ```
+
+If a part is missing, the next one moves up (e.g. no street → summary as
+artist), so the title always carries the most important information. The
+display is refreshed every time the navigation app updates its notification.
 
 > **Status: experimental.** Reading other apps' notifications is unofficial.
 > Navigation apps can change their notification at any time, and Google Maps
@@ -24,9 +28,11 @@ Album:  Google Maps
    notifications of the supported navigation apps. Only *ongoing*
    (or `CATEGORY_NAVIGATION`) notifications that are not group summaries are
    considered guidance.
-2. `NotificationDump`/`NavText` take `EXTRA_TITLE`, `EXTRA_BIG_TEXT`/`EXTRA_TEXT`,
-   `EXTRA_SUB_TEXT` and `EXTRA_INFO_TEXT`. If the extras carry no text, the
-   custom `RemoteViews` layout is inflated off-screen and its `TextView`s are read.
+2. `NotificationDump`/`NavText` take `EXTRA_TITLE`, `EXTRA_TEXT` (or the first
+   line of `EXTRA_BIG_TEXT`), `EXTRA_SUB_TEXT` and `EXTRA_INFO_TEXT`. If the
+   extras carry no text, the custom `RemoteViews` layout is inflated off-screen
+   and its `TextView`s are read. Heuristics (English, German, Czech) then split
+   the text into distance, maneuver, street/direction and trip summary.
 3. `NavPublisher` puts the text into a framework `MediaSession`.
    When the guidance notification disappears, the session is released.
 
@@ -52,8 +58,8 @@ display, and stops it and releases its session to hand the display back.
 
 | Mode | What the car shows | Downsides |
 |---|---|---|
-| **Flash** (default) | Each new maneuver for 8 s, then the music title again | You only see a hint when the maneuver changes, not the countdown to it. Each switch is a "player change" for the car; some head units show a source popup or reset the display. |
-| **Takeover** | Navigation for the whole trip | Music title is not visible. Car buttons reach this app (see below). |
+| **Takeover** (default) | Navigation for the whole trip, distance counting down | Music title is not visible. Car buttons reach this app (see below). |
+| **Flash** | Each new maneuver for 8 s, then the music title again | You only see a hint when the maneuver changes, not the countdown to it. Each switch is a "player change" for the car; some head units show a source popup or reset the display. |
 | **Passive** | Session only, no silent audio | Practically invisible while music plays; only useful for cars that let you pick the player in a Bluetooth browse menu. |
 
 ### Car buttons (play / pause / next / previous)
@@ -83,11 +89,11 @@ device (Settings → *Debug* log, or `adb logcat -s NavBtDisplay`).
 | App | Package(s) | Notification text |
 |---|---|---|
 | Google Maps | `com.google.android.apps.maps` | not yet verified |
-| Waze | `com.waze` | not yet verified |
-| OsmAnd | `net.osmand`, `net.osmand.plus` | not yet verified (OsmAnd also has an official AIDL navigation API, a more robust future option) |
-| Organic Maps | `app.organicmaps` | not yet verified |
-| CoMaps | `app.comaps`, `app.comaps.fdroid` (package names unverified) | not yet verified |
-| HERE WeGo | `com.here.app.maps` | not yet verified |
+| Mapy.com | `cz.seznam.mapy` | not yet verified |
+
+Other apps (Waze, OsmAnd, Organic Maps, CoMaps, HERE WeGo) are left out of
+the first version. OsmAnd would be best supported through its official AIDL
+navigation API rather than its notification.
 
 ## Testing
 
