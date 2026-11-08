@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="test_hint_title">Test: in 200 m rechts abbiegen</string>
+
+    <string name="section_access">Benachrichtigungszugriff</string>
+    <string name="access_granted">Erteilt – Navigationsbenachrichtigungen können gelesen werden.</string>
+    <string name="access_missing">Nicht erteilt – die App kann noch keine Navigationsbenachrichtigungen lesen.</string>
+    <string name="grant_access">Einstellungen für Benachrichtigungszugriff öffnen</string>
+    <string name="enabled">Navigation im Autodisplay anzeigen</string>
+
+    <string name="section_mode">Autodisplay</string>
+    <string name="mode_flash">Jedes neue Manöver 8 s einblenden, dann zurück zur Musik</string>
+    <string name="mode_takeover">Navigation anzeigen, solange die Zielführung läuft (Musiktitel verdeckt)</string>
+    <string name="mode_passive">Passiv: nur Mediensession, kein stilles Audio (bei laufender Musik meist unsichtbar)</string>
+
+    <string name="section_apps">Navigations-Apps</string>
+    <string name="app_installed">installiert</string>
+    <string name="app_not_installed">nicht installiert</string>
+    <string name="app_entry">%1$s (%2$s)</string>
+
+    <string name="section_last_hint">Letzter Hinweis</string>
+    <string name="no_hint_yet">Noch kein Hinweis.</string>
+    <string name="test_hint">Test-Hinweis senden (10 s)</string>
+
+    <string name="section_debug">Debug</string>
+    <string name="debug_log">Benachrichtigungen der Navi-Apps protokollieren</string>
+    <string name="share_log">Log teilen</string>
+    <string name="clear_log">Log löschen</string>
+    <string name="log_empty">Log ist leer.</string>
+</resources>
