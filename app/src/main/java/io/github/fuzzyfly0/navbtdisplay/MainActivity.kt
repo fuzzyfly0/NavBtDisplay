@@ -61,6 +61,14 @@ class MainActivity : Activity() {
             }
         }
 
+        findViewById<Switch>(R.id.rotate_music).apply {
+            isChecked = prefs.rotateMusic
+            setOnCheckedChangeListener { _, on ->
+                prefs.rotateMusic = on
+                NavPublisher.refresh(this@MainActivity)
+            }
+        }
+
         val appList = findViewById<LinearLayout>(R.id.apps)
         for (app in NavApps.ALL) {
             val installed = app.packages.any(::isInstalled)

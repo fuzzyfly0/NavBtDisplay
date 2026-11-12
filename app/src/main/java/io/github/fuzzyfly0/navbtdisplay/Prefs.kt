@@ -32,6 +32,11 @@ class Prefs(context: Context) {
             .getOrDefault(DisplayMode.TAKEOVER)
         set(v) = sp.edit().putString(KEY_MODE, v.name).apply()
 
+    /** In TAKEOVER mode: alternate the first line between maneuver and the music title. */
+    var rotateMusic: Boolean
+        get() = sp.getBoolean(KEY_ROTATE_MUSIC, false)
+        set(v) = sp.edit().putBoolean(KEY_ROTATE_MUSIC, v).apply()
+
     var debugLog: Boolean
         get() = sp.getBoolean(KEY_DEBUG_LOG, true)
         set(v) = sp.edit().putBoolean(KEY_DEBUG_LOG, v).apply()
@@ -47,6 +52,7 @@ class Prefs(context: Context) {
         const val KEY_ENABLED = "enabled"
         const val KEY_APPS = "enabled_apps"
         const val KEY_MODE = "mode"
+        const val KEY_ROTATE_MUSIC = "rotate_music"
         const val KEY_DEBUG_LOG = "debug_log"
         const val KEY_LAST_HINT = "last_hint"
     }

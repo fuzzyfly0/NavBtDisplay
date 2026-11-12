@@ -15,6 +15,22 @@
     <string name="mode_flash">Flash each new maneuver for 8 s, then back to the music</string>
     <string name="mode_takeover">Show navigation for as long as guidance runs (music title hidden)</string>
     <string name="mode_passive">Passive: media session only, no silent audio (usually not visible while music plays)</string>
+    <string name="rotate_music">Alternate the first line with the music title (only with \"show navigation for as long as guidance runs\")</string>
+
+    <string name="dir_left">Turn left</string>
+    <string name="dir_right">Turn right</string>
+    <string name="dir_slight_left">Slight left</string>
+    <string name="dir_slight_right">Slight right</string>
+    <string name="dir_sharp_left">Sharp left</string>
+    <string name="dir_sharp_right">Sharp right</string>
+    <string name="dir_keep_left">Keep left</string>
+    <string name="dir_keep_right">Keep right</string>
+    <string name="dir_exit_left">Exit left</string>
+    <string name="dir_exit_right">Exit right</string>
+    <string name="dir_straight">Continue straight</string>
+    <string name="dir_uturn">Make a U-turn</string>
+    <string name="dir_roundabout">Roundabout</string>
+    <string name="dir_destination">Destination</string>
 
     <string name="section_apps">Navigation apps</string>
     <string name="app_installed">installed</string>

@@ -11,12 +11,16 @@ shows e.g.
 ```
 Title:  300 m · Turn right          (distance + maneuver)
 Artist: Main St                     (street / direction)
-Album:  12 min · 5.3 km · ETA 18:34 (trip summary)
+Album:  12 min · 5.3 km · ETA 18:34 · Then turn left (trip summary + next maneuver)
 ```
 
 If a part is missing, the next one moves up (e.g. no street → summary as
-artist), so the title always carries the most important information. The
-display is refreshed every time the navigation app updates its notification.
+artist), so the title always carries the most important information; fields
+without information stay empty. Fields that only contain an app name
+("Mapy.cz") are ignored. If the text has no direction at all (only the street),
+the direction is taken from the name of the notification's icon resource
+(e.g. `ic_turn_right`), if the app uses resource icons. The display is
+refreshed every time the navigation app updates its notification.
 
 > **Status: experimental.** Reading other apps' notifications is unofficial.
 > Navigation apps can change their notification at any time, and Google Maps
@@ -30,7 +34,7 @@ display is refreshed every time the navigation app updates its notification.
    considered guidance.
 2. `NotificationDump`/`NavText` take `EXTRA_TITLE`, `EXTRA_TEXT` (or the first
    line of `EXTRA_BIG_TEXT`), `EXTRA_SUB_TEXT` and `EXTRA_INFO_TEXT`. If the
-   extras carry no text, the custom `RemoteViews` layout is inflated off-screen
+   extras carry no maneuver, the custom `RemoteViews` layout is inflated off-screen
    and its `TextView`s are read. Heuristics (English, German, Czech) then split
    the text into distance, maneuver, street/direction and trip summary.
 3. `NavPublisher` puts the text into a framework `MediaSession`.
@@ -62,6 +66,20 @@ display, and stops it and releases its session to hand the display back.
 | **Flash** | Each new maneuver for 8 s, then the music title again | You only see a hint when the maneuver changes, not the countdown to it. Each switch is a "player change" for the car; some head units show a source popup or reset the display. |
 | **Passive** | Session only, no silent audio | Practically invisible while music plays; only useful for cars that let you pick the player in a Bluetooth browse menu. |
 
+While the app holds the display it watches the music app's session. When the
+track changes, playback resumes or another music app starts, the music app has
+usually started a new player and taken the display; the app then re-claims it
+after about 1 s instead of waiting for the next maneuver.
+
+The silent player is not restarted while a voice prompt
+(`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`) is playing; the re-claim waits until
+the prompt has ended (at most 15 s).
+
+**Music title in the first line (optional, Takeover only):** the first line
+alternates between the maneuver (6 s) and `♪ Artist – Title` of the playing
+music (3 s). Lines 2 and 3 keep showing the navigation; a new maneuver always
+starts with the navigation phase.
+
 ### Car buttons (play / pause / next / previous)
 
 While this app holds the display, the car's buttons are delivered to *its*
@@ -90,6 +108,13 @@ device (Settings → *Debug* log, or `adb logcat -s NavBtDisplay`).
 |---|---|---|
 | Google Maps | `com.google.android.apps.maps` | not yet verified |
 | Mapy.com | `cz.seznam.mapy` | not yet verified |
+| Blitzer.de (warnings) | `de.blitzer`, `de.blitzer.plus`, `net.graphmasters.blitzerdex` | not yet verified |
+
+Warning apps such as Blitzer.de run next to the navigation. A notification line
+that looks like a warning ("Blitzer", "Gefahr", "Stau", "50 km/h", …) is shown
+as `⚠ …` for 10 s in every mode, also without guidance; then the guidance (or
+the music) returns. Updates of the same warning (counting-down distance) only
+refresh the text; the status notification ("Blitzer.de ist aktiv") is ignored.
 
 Other apps (Waze, OsmAnd, Organic Maps, CoMaps, HERE WeGo) are left out of
 the first version. OsmAnd would be best supported through its official AIDL

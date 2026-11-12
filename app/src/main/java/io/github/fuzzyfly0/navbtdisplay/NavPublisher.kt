@@ -2,6 +2,7 @@ package io.github.fuzzyfly0.navbtdisplay
 
 import android.content.ComponentName
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaMetadata
 import android.media.session.MediaController
@@ -28,8 +29,17 @@ import android.view.KeyEvent
 object NavPublisher {
     private const val FLASH_MS = 8_000L
     private const val TEST_MS = 10_000L
+    private const val WARNING_MS = 10_000L
+
+    /** The same warning text after this long without updates is a new warning (the next camera). */
+    private const val WARNING_FORGET_MS = 30_000L
+    private const val NAV_PHASE_MS = 6_000L
+    private const val MUSIC_PHASE_MS = 3_000L
     private const val MIN_UPDATE_INTERVAL_MS = 1_000L
     private const val REDISPATCH_DELAY_MS = 500L
+    private const val RECLAIM_DELAY_MS = 1_000L
+    private const val RECLAIM_POLL_MS = 500L
+    private const val RECLAIM_MAX_WAIT_MS = 15_000L
 
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var appContext: Context
@@ -45,8 +55,23 @@ object NavPublisher {
     private var lastMetadataAt = 0L
     private var pendingMetadata: CarText? = null
 
-    private val releaseRunnable = Runnable { release("timer") }
+    /** A warning (speed camera) shown on top of the guidance, if any. */
+    private var warning: CarText? = null
+    private var lastWarningKey: String? = null
+    private var lastWarningAt = 0L
+
+    /** Rotation in TAKEOVER mode: whether the first line currently shows the music title. */
+    private var showMusic = false
+    private var musicController: MediaController? = null
+    private var musicTrack: String? = null
+    private var musicPlaying = false
+    private var reclaimDeadline = 0L
+
+    private val releaseRunnable = Runnable { if (warning == null) release("timer") }
     private val metadataRunnable = Runnable { pendingMetadata?.let(::applyMetadata) }
+    private val warningEndRunnable = Runnable(::endWarning)
+    private val rotateRunnable = Runnable(::rotate)
+    private val reclaimRunnable = Runnable(::reclaim)
 
     private fun init(context: Context) {
         if (!::appContext.isInitialized) appContext = context.applicationContext
@@ -58,30 +83,31 @@ object NavPublisher {
         val newManeuver = car.maneuverKey != current?.maneuverKey
         guidanceKey = notificationKey
         current = car
-        Prefs(appContext).lastHint = "${car.title}\n${car.artist}"
+        if (warning == null) Prefs(appContext).lastHint = hintText(car)
 
         when (Prefs(appContext).mode) {
             DisplayMode.PASSIVE -> {
                 ensureSession()
                 setPlaybackState(PlaybackState.STATE_PLAYING)
-                setMetadata(car)
+                show()
             }
             DisplayMode.TAKEOVER -> {
                 if (newManeuver) suspendedManeuver = null
                 if (suspendedManeuver != null) return
-                // A new player on every new maneuver re-claims the display in case
-                // the music app (re)started its own player in the meantime.
-                if (newManeuver || session == null) takeOver()
-                setMetadata(car)
+                // Re-claim on every new maneuver in case the music app (re)started
+                // its own player in the meantime.
+                if (newManeuver || session == null) claim()
+                if (newManeuver) restartRotation()
+                show()
             }
             DisplayMode.FLASH -> {
-                if (newManeuver) {
-                    takeOver()
+                if (newManeuver && warning == null) {
+                    claim()
                     handler.removeCallbacks(releaseRunnable)
                     handler.postDelayed(releaseRunnable, FLASH_MS)
                 }
                 // Keep the distance counting down while the hint is visible.
-                if (silence?.isPlaying == true) setMetadata(car)
+                if (silence?.isPlaying == true) show()
             }
         }
     }
@@ -93,7 +119,42 @@ object NavPublisher {
         guidanceKey = null
         current = null
         suspendedManeuver = null
-        release("guidance ended")
+        if (warning == null) release("guidance ended")
+    }
+
+    /**
+     * A warning app posted or updated a warning. It is shown for [WARNING_MS] in every
+     * mode, also without guidance; updates of the same warning only refresh the text.
+     */
+    fun onWarning(context: Context, notificationKey: String, car: CarText) {
+        init(context)
+        val now = SystemClock.elapsedRealtime()
+        val isNew = car.maneuverKey != lastWarningKey || now - lastWarningAt > WARNING_FORGET_MS
+        lastWarningKey = car.maneuverKey
+        lastWarningAt = now
+        if (!isNew && warning == null) return
+        warning = car
+        Prefs(appContext).lastHint = hintText(car)
+        if (isNew) {
+            DebugLog.log(appContext, "show warning from $notificationKey")
+            if (Prefs(appContext).mode == DisplayMode.PASSIVE) {
+                ensureSession()
+                setPlaybackState(PlaybackState.STATE_PLAYING)
+            } else {
+                claim()
+            }
+            handler.removeCallbacks(warningEndRunnable)
+            handler.postDelayed(warningEndRunnable, WARNING_MS)
+        }
+        show()
+    }
+
+    /** Re-applies settings that take effect while the display is held (music rotation). */
+    fun refresh(context: Context) {
+        init(context)
+        if (session == null) return
+        restartRotation()
+        show()
     }
 
     /** Shows a fixed test hint for a few seconds, to check the car display without navigating. */
@@ -118,7 +179,35 @@ object NavPublisher {
         guidanceKey = null
         current = null
         suspendedManeuver = null
+        warning = null
+        handler.removeCallbacks(warningEndRunnable)
         release("stopped")
+    }
+
+    private fun endWarning() {
+        warning = null
+        val car = current
+        when {
+            car == null -> release("warning ended")
+            Prefs(appContext).mode == DisplayMode.FLASH -> release("warning ended")
+            suspendedManeuver != null -> release("warning ended")
+            else -> {
+                Prefs(appContext).lastHint = hintText(car)
+                show()
+            }
+        }
+    }
+
+    /**
+     * Takes the display, but does not restart our player while the navigation app
+     * speaks: some phones and head units cut the announcement when a new player starts.
+     */
+    private fun claim() {
+        if (session == null || !navVoiceActive()) {
+            takeOver()
+        } else {
+            requestReclaim("voice prompt running")
+        }
     }
 
     private fun takeOver() {
@@ -127,13 +216,46 @@ object NavPublisher {
         val s = silence ?: SilentAudio(appContext).also { silence = it }
         s.restart()
         setPlaybackState(PlaybackState.STATE_PLAYING)
+        handler.removeCallbacks(reclaimRunnable)
+        attachMusic()
         DebugLog.log(appContext, "take over display")
     }
+
+    /** Restarts our player after a short delay, once no voice prompt is playing. */
+    private fun requestReclaim(reason: String) {
+        DebugLog.log(appContext, "re-claim display soon ($reason)")
+        reclaimDeadline = SystemClock.elapsedRealtime() + RECLAIM_MAX_WAIT_MS
+        handler.removeCallbacks(reclaimRunnable)
+        handler.postDelayed(reclaimRunnable, RECLAIM_DELAY_MS)
+    }
+
+    private fun reclaim() {
+        val s = silence ?: return
+        if (session == null) return
+        if (navVoiceActive() && SystemClock.elapsedRealtime() < reclaimDeadline) {
+            handler.postDelayed(reclaimRunnable, RECLAIM_POLL_MS)
+            return
+        }
+        s.restart()
+        setPlaybackState(PlaybackState.STATE_PLAYING)
+        DebugLog.log(appContext, "re-claimed display")
+        show()
+    }
+
+    private fun navVoiceActive(): Boolean = runCatching {
+        appContext.getSystemService(AudioManager::class.java).activePlaybackConfigurations.any {
+            it.audioAttributes.usage == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
+        }
+    }.getOrDefault(false)
 
     private fun release(reason: String) {
         handler.removeCallbacks(releaseRunnable)
         handler.removeCallbacks(metadataRunnable)
+        handler.removeCallbacks(rotateRunnable)
+        handler.removeCallbacks(reclaimRunnable)
         pendingMetadata = null
+        showMusic = false
+        detachMusic()
         silence?.stop()
         session?.let {
             it.setPlaybackState(state(PlaybackState.STATE_STOPPED))
@@ -143,6 +265,127 @@ object NavPublisher {
         }
         session = null
     }
+
+    /** Puts the current warning or guidance (with the music title, if rotating) on the display. */
+    private fun show() {
+        warning?.let {
+            setMetadata(it)
+            return
+        }
+        val car = current ?: return
+        val music = if (showMusic && rotationEnabled()) musicLine() else null
+        setMetadata(if (music != null) car.copy(title = music) else car)
+    }
+
+    private fun rotationEnabled(): Boolean {
+        val prefs = Prefs(appContext)
+        return prefs.rotateMusic && prefs.mode == DisplayMode.TAKEOVER
+    }
+
+    /** A new maneuver always starts with the navigation phase. */
+    private fun restartRotation() {
+        showMusic = false
+        handler.removeCallbacks(rotateRunnable)
+        if (rotationEnabled()) handler.postDelayed(rotateRunnable, NAV_PHASE_MS)
+    }
+
+    private fun rotate() {
+        if (session == null || !rotationEnabled()) {
+            showMusic = false
+            return
+        }
+        showMusic = !showMusic && warning == null && musicLine() != null
+        show()
+        handler.postDelayed(rotateRunnable, if (showMusic) MUSIC_PHASE_MS else NAV_PHASE_MS)
+    }
+
+    private fun musicLine(): String? {
+        val c = musicController ?: return null
+        if (c.playbackState?.state != PlaybackState.STATE_PLAYING) return null
+        val md = c.metadata ?: return null
+        val text = listOf(MediaMetadata.METADATA_KEY_ARTIST, MediaMetadata.METADATA_KEY_TITLE)
+            .mapNotNull { md.getString(it)?.trim()?.takeIf(String::isNotEmpty) }
+            .joinToString(" – ")
+        return text.takeIf { it.isNotEmpty() }?.let { "♪ $it" }
+    }
+
+    /**
+     * Watches the music app while we hold the display. A new track or a resumed
+     * playback usually means the music app started a new player and took the
+     * display, so we take it back right away instead of waiting for the next maneuver.
+     */
+    private val musicCallback = object : MediaController.Callback() {
+        override fun onMetadataChanged(metadata: MediaMetadata?) {
+            val track = trackOf(metadata)
+            if (track == musicTrack) return
+            musicTrack = track
+            onMusicChanged("track changed")
+        }
+
+        override fun onPlaybackStateChanged(state: PlaybackState?) {
+            val playing = state?.state == PlaybackState.STATE_PLAYING
+            if (playing == musicPlaying) return
+            musicPlaying = playing
+            if (playing) onMusicChanged("music started")
+        }
+
+        override fun onSessionDestroyed() = detachController()
+    }
+
+    private var watchingSessions = false
+    private val sessionsListener =
+        MediaSessionManager.OnActiveSessionsChangedListener { watchMusicController(notify = true) }
+
+    private fun onMusicChanged(reason: String) {
+        if (session == null || silence?.isPlaying != true) return
+        if (suspendedManeuver != null && warning == null) return
+        requestReclaim(reason)
+    }
+
+    private fun attachMusic() {
+        if (!watchingSessions) {
+            watchingSessions = runCatching {
+                appContext.getSystemService(MediaSessionManager::class.java)
+                    .addOnActiveSessionsChangedListener(sessionsListener, listenerComponent(), handler)
+            }.isSuccess
+        }
+        watchMusicController(notify = false)
+    }
+
+    private fun watchMusicController(notify: Boolean) {
+        val found = findMusicController()
+        if (found?.sessionToken == musicController?.sessionToken) return
+        detachController()
+        found ?: return
+        musicController = found
+        musicTrack = trackOf(found.metadata)
+        musicPlaying = found.playbackState?.state == PlaybackState.STATE_PLAYING
+        found.registerCallback(musicCallback, handler)
+        DebugLog.log(appContext, "watching music session of ${found.packageName}")
+        if (notify && musicPlaying) onMusicChanged("music app changed")
+    }
+
+    private fun trackOf(md: MediaMetadata?) = md?.let {
+        "${it.getString(MediaMetadata.METADATA_KEY_ARTIST)}|${it.getString(MediaMetadata.METADATA_KEY_TITLE)}"
+    }
+
+    private fun detachController() {
+        musicController?.unregisterCallback(musicCallback)
+        musicController = null
+    }
+
+    private fun detachMusic() {
+        detachController()
+        if (!watchingSessions) return
+        watchingSessions = false
+        runCatching {
+            appContext.getSystemService(MediaSessionManager::class.java)
+                .removeOnActiveSessionsChangedListener(sessionsListener)
+        }
+    }
+
+    private fun hintText(car: CarText) =
+        listOf(car.title, car.artist, car.album).filter { it.isNotBlank() }.joinToString("\n")
 
     private fun ensureSession() {
         if (session != null) return
@@ -226,9 +469,11 @@ object NavPublisher {
         }, REDISPATCH_DELAY_MS)
     }
 
+    private fun listenerComponent() = ComponentName(appContext, NavListenerService::class.java)
+
     private fun findMusicController(): MediaController? = runCatching {
         val msm = appContext.getSystemService(MediaSessionManager::class.java)
-        val sessions = msm.getActiveSessions(ComponentName(appContext, NavListenerService::class.java))
+        val sessions = msm.getActiveSessions(listenerComponent())
             .filter { it.packageName != appContext.packageName }
         sessions.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
             ?: sessions.firstOrNull()

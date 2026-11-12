@@ -14,6 +14,22 @@
     <string name="mode_flash">Jedes neue Manöver 8 s einblenden, dann zurück zur Musik</string>
     <string name="mode_takeover">Navigation anzeigen, solange die Zielführung läuft (Musiktitel verdeckt)</string>
     <string name="mode_passive">Passiv: nur Mediensession, kein stilles Audio (bei laufender Musik meist unsichtbar)</string>
+    <string name="rotate_music">Erste Zeile im Wechsel mit dem Musiktitel anzeigen (nur bei „Navigation anzeigen, solange die Zielführung läuft“)</string>
+
+    <string name="dir_left">Links abbiegen</string>
+    <string name="dir_right">Rechts abbiegen</string>
+    <string name="dir_slight_left">Leicht links</string>
+    <string name="dir_slight_right">Leicht rechts</string>
+    <string name="dir_sharp_left">Scharf links</string>
+    <string name="dir_sharp_right">Scharf rechts</string>
+    <string name="dir_keep_left">Links halten</string>
+    <string name="dir_keep_right">Rechts halten</string>
+    <string name="dir_exit_left">Ausfahrt links</string>
+    <string name="dir_exit_right">Ausfahrt rechts</string>
+    <string name="dir_straight">Geradeaus</string>
+    <string name="dir_uturn">Wenden</string>
+    <string name="dir_roundabout">Kreisverkehr</string>
+    <string name="dir_destination">Ziel</string>
 
     <string name="section_apps">Navigations-Apps</string>
     <string name="app_installed">installiert</string>

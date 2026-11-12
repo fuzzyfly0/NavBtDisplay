@@ -72,7 +72,91 @@ class NavTextTest {
         )!!
         assertEquals("500 m · Turn left", car.title)
         assertEquals("ETA 18:34", car.artist)
-        assertEquals("Mapy.com", car.album)
+        assertEquals("", car.album)
+    }
+
+    @Test
+    fun `app name in the title is ignored and the custom layout is used`() {
+        val raw = RawNavFields(
+            title = "Mapy.cz",
+            text = "300 m",
+            viewTexts = listOf("Mapy.cz", "300 m", "Odbočte vlevo na Hlavní"),
+        )
+        assertEquals(false, NavText.extrasHaveManeuver(raw, "Mapy.com"))
+        val car = NavText.compose("Mapy.com", raw)!!
+        assertEquals("300 m · Odbočte vlevo", car.title)
+        assertEquals("Hlavní", car.artist)
+        assertEquals("", car.album)
+    }
+
+    @Test
+    fun `app name as sub text is no summary`() {
+        val car = NavText.compose("Mapy.com", RawNavFields(title = "200 m", text = "Turn right", subText = "Mapy.cz"))!!
+        assertEquals("", car.artist)
+        assertEquals("", car.album)
+    }
+
+    @Test
+    fun `icon gives the direction when the text has only the street`() {
+        val car = NavText.compose(
+            "Mapy.com",
+            RawNavFields(title = "200 m", text = "Hlavní", subText = "18:34", iconManeuver = "Links abbiegen"),
+        )!!
+        assertEquals("200 m · Links abbiegen", car.title)
+        assertEquals("Hlavní", car.artist)
+        assertEquals("18:34", car.album)
+    }
+
+    @Test
+    fun `icon is ignored when the text already has a direction`() {
+        val info = NavText.parse(
+            RawNavFields(title = "200 m", text = "Rechts abbiegen auf A", iconManeuver = "Links abbiegen"),
+        )!!
+        assertEquals("Rechts abbiegen", info.maneuver)
+    }
+
+    @Test
+    fun `icon resource names map to directions`() {
+        assertEquals("right", NavText.directionKey("ic_turn_right"))
+        assertEquals("slight_left", NavText.directionKey("nav_slight_left_24dp"))
+        assertEquals("uturn", NavText.directionKey("ic_uturn_left"))
+        assertEquals("roundabout", NavText.directionKey("ic_roundabout_exit_2"))
+        assertEquals("exit_right", NavText.directionKey("ramp_right"))
+        assertEquals("straight", NavText.directionKey("ic_continue"))
+        assertNull(NavText.directionKey("ic_notification_logo"))
+        assertNull(NavText.directionKey(null))
+    }
+
+    @Test
+    fun `following maneuver from the big text goes to the album`() {
+        val car = NavText.compose(
+            "Google Maps",
+            RawNavFields(
+                title = "300 m",
+                text = "Rechts abbiegen auf Hauptstraße",
+                bigText = "Rechts abbiegen auf Hauptstraße\nDann links abbiegen",
+                subText = "18:34",
+            ),
+        )!!
+        assertEquals("18:34 · Dann links abbiegen", car.album)
+    }
+
+    @Test
+    fun `warning app status is no warning`() {
+        assertNull(NavText.composeWarning("Blitzer.de", RawNavFields(title = "Blitzer.de", text = "Blitzer.de ist aktiv")))
+        assertNull(NavText.composeWarning("Blitzer.de", RawNavFields(title = "Blitzer.de PRO")))
+    }
+
+    @Test
+    fun `speed camera warning`() {
+        val a = NavText.composeWarning(
+            "Blitzer.de",
+            RawNavFields(title = "Blitzer.de", text = "Mobiler Blitzer in 500 m", subText = "50 km/h"),
+        )!!
+        assertEquals("⚠ Mobiler Blitzer in 500 m", a.title)
+        assertEquals("50 km/h", a.artist)
+        val b = NavText.composeWarning("Blitzer.de", RawNavFields(text = "Mobiler Blitzer in 200 m"))!!
+        assertEquals(a.maneuverKey, b.maneuverKey)
     }
 
     @Test
