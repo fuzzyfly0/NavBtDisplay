@@ -78,6 +78,107 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
+            android:text="@string/section_voice" />
+
+        <Switch
+            android:id="@+id/reclaim_on_maneuver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="@string/reclaim_on_maneuver" />
+
+        <Switch
+            android:id="@+id/new_track_per_maneuver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="@string/new_track_per_maneuver" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="@string/voice_hint" />
+
+        <TextView
+            style="@android:style/TextAppearance.DeviceDefault.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
+            android:text="@string/section_art" />
+
+        <RadioGroup
+            android:id="@+id/art_mode"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/art_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/art_off" />
+
+            <RadioButton
+                android:id="@+id/art_notification"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/art_notification" />
+
+            <RadioButton
+                android:id="@+id/art_screen"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/art_screen" />
+        </RadioGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="@string/art_interval" />
+
+        <RadioGroup
+            android:id="@+id/art_interval"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/art_interval_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/art_interval_3" />
+
+            <RadioButton
+                android:id="@+id/art_interval_5"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/art_interval_5" />
+
+            <RadioButton
+                android:id="@+id/art_interval_10"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/art_interval_10" />
+        </RadioGroup>
+
+        <Button
+            android:id="@+id/screen_capture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/capture_start" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="@string/art_hint" />
+
+        <TextView
+            style="@android:style/TextAppearance.DeviceDefault.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
             android:text="@string/section_apps" />
 
         <LinearLayout

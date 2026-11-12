@@ -40,6 +40,9 @@ class NavListenerService : NotificationListenerService() {
         if (!NotificationDump.isGuidanceCandidate(sbn)) return
         val car = NavText.compose(app.label, NotificationDump.fields(this, sbn, app.label)) ?: return
         DebugLog.log(this, "parsed title='${car.title}' artist='${car.artist}' album='${car.album}' key='${car.maneuverKey}'")
+        if (Prefs(this).artMode == ArtMode.NOTIFICATION) {
+            NavPublisher.onArt(this, ArtMode.NOTIFICATION, runCatching { ArtImages.fromNotification(this, sbn) }.getOrNull())
+        }
         NavPublisher.onGuidance(this, sbn.key, car)
     }
 

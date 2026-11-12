@@ -2,8 +2,10 @@ package io.github.fuzzyfly0.navbtdisplay
 
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.AudioPlaybackConfiguration
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSession
@@ -41,6 +43,10 @@ object NavPublisher {
     private const val RECLAIM_POLL_MS = 500L
     private const val RECLAIM_MAX_WAIT_MS = 15_000L
 
+    /** Guards against apps whose maneuver text changes on every update. */
+    private const val MIN_CLAIM_INTERVAL_MS = 5_000L
+    private const val VOICE_POLL_MS = 500L
+
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var appContext: Context
     private var session: MediaSession? = null
@@ -66,8 +72,20 @@ object NavPublisher {
     private var musicTrack: String? = null
     private var musicPlaying = false
     private var reclaimDeadline = 0L
+    private var lastTakeOverAt = 0L
+    private var rotationRunning = false
+
+    /** Album art; [artVersion] goes into the media id, because cars only fetch art for a new track. */
+    private var art: Bitmap? = null
+    private var artVersion = 0
+    private var sentMediaId: String? = null
+    private var sentArt: Bitmap? = null
+
+    private var audioLogged: String? = null
+    private var audioCallbackRegistered = false
 
     private val releaseRunnable = Runnable { if (warning == null) release("timer") }
+    private val voiceRetryRunnable = Runnable(::show)
     private val metadataRunnable = Runnable { pendingMetadata?.let(::applyMetadata) }
     private val warningEndRunnable = Runnable(::endWarning)
     private val rotateRunnable = Runnable(::rotate)
@@ -94,10 +112,17 @@ object NavPublisher {
             DisplayMode.TAKEOVER -> {
                 if (newManeuver) suspendedManeuver = null
                 if (suspendedManeuver != null) return
-                // Re-claim on every new maneuver in case the music app (re)started
-                // its own player in the meantime.
-                if (newManeuver || session == null) claim()
-                if (newManeuver) restartRotation()
+                // Re-claim on new maneuvers in case the music app (re)started its own
+                // player in the meantime; the music watcher covers the rest.
+                val sinceClaim = SystemClock.elapsedRealtime() - lastTakeOverAt
+                if (session == null) {
+                    claim()
+                } else if (newManeuver && Prefs(appContext).reclaimOnManeuver && sinceClaim >= MIN_CLAIM_INTERVAL_MS) {
+                    claim()
+                }
+                // Back to the maneuver at once, but don't restart a running navigation phase:
+                // apps whose text changes on every update would otherwise never show the music.
+                if (newManeuver && (showMusic || !rotationRunning)) restartRotation()
                 show()
             }
             DisplayMode.FLASH -> {
@@ -149,12 +174,24 @@ object NavPublisher {
         show()
     }
 
-    /** Re-applies settings that take effect while the display is held (music rotation). */
+    /** Re-applies settings that take effect while the display is held (music rotation, album art). */
     fun refresh(context: Context) {
         init(context)
+        if (Prefs(appContext).artMode == ArtMode.OFF) art = null
         if (session == null) return
         restartRotation()
         show()
+    }
+
+    /** New album art from [source]; ignored unless that source is selected. */
+    fun onArt(context: Context, source: ArtMode, bitmap: Bitmap?) {
+        init(context)
+        if (Prefs(appContext).artMode != source) return
+        val old = art
+        if (bitmap == old || (bitmap != null && old != null && bitmap.sameAs(old))) return
+        art = bitmap
+        artVersion++
+        if (session != null) show()
     }
 
     /** Shows a fixed test hint for a few seconds, to check the car display without navigating. */
@@ -216,8 +253,10 @@ object NavPublisher {
         val s = silence ?: SilentAudio(appContext).also { silence = it }
         s.restart()
         setPlaybackState(PlaybackState.STATE_PLAYING)
+        lastTakeOverAt = SystemClock.elapsedRealtime()
         handler.removeCallbacks(reclaimRunnable)
         attachMusic()
+        watchAudioPlayers()
         DebugLog.log(appContext, "take over display")
     }
 
@@ -238,24 +277,62 @@ object NavPublisher {
         }
         s.restart()
         setPlaybackState(PlaybackState.STATE_PLAYING)
+        lastTakeOverAt = SystemClock.elapsedRealtime()
         DebugLog.log(appContext, "re-claimed display")
         show()
     }
 
+    /** A navigation prompt, or other speech that is not media (podcasts are USAGE_MEDIA). */
+    private fun isVoicePrompt(a: AudioAttributes) =
+        a.usage == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE ||
+            (a.contentType == AudioAttributes.CONTENT_TYPE_SPEECH && a.usage != AudioAttributes.USAGE_MEDIA)
+
     private fun navVoiceActive(): Boolean = runCatching {
         appContext.getSystemService(AudioManager::class.java).activePlaybackConfigurations.any {
-            it.audioAttributes.usage == AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
+            isVoicePrompt(it.audioAttributes)
         }
     }.getOrDefault(false)
+
+    /** Logs which players are active (usage/content type), to find out how an app plays its prompts. */
+    private val audioCallback = object : AudioManager.AudioPlaybackCallback() {
+        override fun onPlaybackConfigChanged(configs: List<AudioPlaybackConfiguration>) {
+            val desc = configs.joinToString(", ") {
+                val a = it.audioAttributes
+                "usage=${a.usage} content=${a.contentType}" + if (isVoicePrompt(a)) " (prompt)" else ""
+            }.ifEmpty { "none" }
+            if (desc == audioLogged) return
+            audioLogged = desc
+            DebugLog.log(appContext, "audio players: $desc")
+        }
+    }
+
+    private fun watchAudioPlayers() {
+        if (audioCallbackRegistered) return
+        audioCallbackRegistered = runCatching {
+            appContext.getSystemService(AudioManager::class.java).registerAudioPlaybackCallback(audioCallback, handler)
+        }.isSuccess
+    }
+
+    private fun unwatchAudioPlayers() {
+        if (!audioCallbackRegistered) return
+        audioCallbackRegistered = false
+        audioLogged = null
+        runCatching { appContext.getSystemService(AudioManager::class.java).unregisterAudioPlaybackCallback(audioCallback) }
+    }
 
     private fun release(reason: String) {
         handler.removeCallbacks(releaseRunnable)
         handler.removeCallbacks(metadataRunnable)
         handler.removeCallbacks(rotateRunnable)
         handler.removeCallbacks(reclaimRunnable)
+        handler.removeCallbacks(voiceRetryRunnable)
         pendingMetadata = null
         showMusic = false
+        rotationRunning = false
+        sentMediaId = null
+        sentArt = null
         detachMusic()
+        unwatchAudioPlayers()
         silence?.stop()
         session?.let {
             it.setPlaybackState(state(PlaybackState.STATE_STOPPED))
@@ -286,12 +363,14 @@ object NavPublisher {
     private fun restartRotation() {
         showMusic = false
         handler.removeCallbacks(rotateRunnable)
-        if (rotationEnabled()) handler.postDelayed(rotateRunnable, NAV_PHASE_MS)
+        rotationRunning = rotationEnabled()
+        if (rotationRunning) handler.postDelayed(rotateRunnable, NAV_PHASE_MS)
     }
 
     private fun rotate() {
         if (session == null || !rotationEnabled()) {
             showMusic = false
+            rotationRunning = false
             return
         }
         showMusic = !showMusic && warning == null && musicLine() != null
@@ -425,15 +504,35 @@ object NavPublisher {
         pendingMetadata = null
         val s = session ?: return
         lastMetadataAt = SystemClock.elapsedRealtime()
+        val prefs = Prefs(appContext)
+        val artOn = prefs.artMode != ArtMode.OFF
+        // A new media id makes head units treat it as a new "track": per maneuver (optional)
+        // and per album art image, since cars only fetch the art of a new track.
+        val base = if (prefs.newTrackPerManeuver) "nav-${car.maneuverKey.hashCode()}" else "nav"
+        val wantedId = if (artOn) "$base-$artVersion" else base
+        val wantedArt = if (artOn) art else null
+        // Some head units mute briefly on a track change: no new track during a voice prompt.
+        val hold = sentMediaId != null && wantedId != sentMediaId && navVoiceActive()
+        val id = if (hold) sentMediaId!! else wantedId
+        val bitmap = if (hold) sentArt else wantedArt
+        handler.removeCallbacks(voiceRetryRunnable)
+        if (hold) handler.postDelayed(voiceRetryRunnable, VOICE_POLL_MS)
+        sentMediaId = id
+        sentArt = bitmap
         s.setMetadata(
             MediaMetadata.Builder()
-                // A new media id per maneuver lets head units treat it as a new "track".
-                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, "nav-${car.maneuverKey.hashCode()}")
+                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, id)
                 .putString(MediaMetadata.METADATA_KEY_TITLE, car.title)
                 .putString(MediaMetadata.METADATA_KEY_ARTIST, car.artist)
                 .putString(MediaMetadata.METADATA_KEY_ALBUM, car.album)
                 .putString(MediaMetadata.METADATA_KEY_DISPLAY_TITLE, car.title)
                 .putString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE, car.artist)
+                .apply {
+                    if (bitmap != null) {
+                        putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, bitmap)
+                        putBitmap(MediaMetadata.METADATA_KEY_ART, bitmap)
+                    }
+                }
                 .build(),
         )
     }

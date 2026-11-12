@@ -17,6 +17,25 @@
     <string name="mode_passive">Passive: media session only, no silent audio (usually not visible while music plays)</string>
     <string name="rotate_music">Alternate the first line with the music title (only with \"show navigation for as long as guidance runs\")</string>
 
+    <string name="section_voice">Voice prompts</string>
+    <string name="reclaim_on_maneuver">Take over the display again on every new maneuver (off: only after the music app took it, e.g. new song)</string>
+    <string name="new_track_per_maneuver">Report every new maneuver to the car as a new track (switch off if prompts are cut: some car stereos mute briefly on a track change)</string>
+    <string name="voice_hint">While a voice prompt plays, the app never restarts its player and never reports a new track.</string>
+
+    <string name="section_art">Album art</string>
+    <string name="art_off">Off</string>
+    <string name="art_notification">Picture from the navigation notification (maneuver arrow)</string>
+    <string name="art_screen">Screenshot via screen sharing</string>
+    <string name="art_interval">Refresh screenshot every</string>
+    <string name="art_interval_3">3 s</string>
+    <string name="art_interval_5">5 s</string>
+    <string name="art_interval_10">10 s</string>
+    <string name="capture_start">Start screen sharing</string>
+    <string name="capture_stop">Stop screen sharing</string>
+    <string name="capture_running">Screen sharing for the car display is on</string>
+    <string name="capture_channel">Screen sharing</string>
+    <string name="art_hint">Cars only load a new picture for a new track, so every new picture is reported as a new track. The phone and the car must support Bluetooth cover art. The screenshot shows the middle of the screen; with the screen off it stays on the last picture.</string>
+
     <string name="dir_left">Turn left</string>
     <string name="dir_right">Turn right</string>
     <string name="dir_slight_left">Slight left</string>

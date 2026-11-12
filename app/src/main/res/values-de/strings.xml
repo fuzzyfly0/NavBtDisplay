@@ -16,6 +16,25 @@
     <string name="mode_passive">Passiv: nur Mediensession, kein stilles Audio (bei laufender Musik meist unsichtbar)</string>
     <string name="rotate_music">Erste Zeile im Wechsel mit dem Musiktitel anzeigen (nur bei „Navigation anzeigen, solange die Zielführung läuft“)</string>
 
+    <string name="section_voice">Ansagen</string>
+    <string name="reclaim_on_maneuver">Bei jedem neuen Manöver das Display neu übernehmen (aus: nur, wenn die Musik-App es übernommen hat, z. B. neues Lied)</string>
+    <string name="new_track_per_maneuver">Jedes neue Manöver dem Auto als neuen Titel melden (ausschalten, wenn Ansagen abgehackt sind: manche Radios schalten bei einem Titelwechsel kurz stumm)</string>
+    <string name="voice_hint">Während einer Ansage startet die App ihren Player nie neu und meldet keinen neuen Titel.</string>
+
+    <string name="section_art">Albumcover</string>
+    <string name="art_off">Aus</string>
+    <string name="art_notification">Bild aus der Navi-Benachrichtigung (Abbiegepfeil)</string>
+    <string name="art_screen">Screenshot per Bildschirmfreigabe</string>
+    <string name="art_interval">Screenshot aktualisieren alle</string>
+    <string name="art_interval_3">3 s</string>
+    <string name="art_interval_5">5 s</string>
+    <string name="art_interval_10">10 s</string>
+    <string name="capture_start">Bildschirmfreigabe starten</string>
+    <string name="capture_stop">Bildschirmfreigabe beenden</string>
+    <string name="capture_running">Bildschirmfreigabe für das Autodisplay ist aktiv</string>
+    <string name="capture_channel">Bildschirmfreigabe</string>
+    <string name="art_hint">Das Auto lädt ein neues Bild nur bei einem neuen Titel. Deshalb wird jedes neue Bild als neuer Titel gemeldet. Handy und Auto müssen Albumcover über Bluetooth unterstützen. Der Screenshot zeigt die Bildschirmmitte; bei ausgeschaltetem Bildschirm bleibt das letzte Bild stehen.</string>
+
     <string name="dir_left">Links abbiegen</string>
     <string name="dir_right">Rechts abbiegen</string>
     <string name="dir_slight_left">Leicht links</string>

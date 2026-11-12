@@ -71,9 +71,35 @@ track changes, playback resumes or another music app starts, the music app has
 usually started a new player and taken the display; the app then re-claims it
 after about 1 s instead of waiting for the next maneuver.
 
-The silent player is not restarted while a voice prompt
-(`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`) is playing; the re-claim waits until
-the prompt has ended (at most 15 s).
+### Voice prompts
+
+While a voice prompt is playing (`USAGE_ASSISTANCE_NAVIGATION_GUIDANCE`, or
+non-media speech), the silent player is not restarted and no new track is
+reported; both wait until the prompt has ended (re-claim: at most 15 s). With
+the debug log on, every change of the active players is logged
+(`audio players: usage=… content=…`), which shows how an app plays its prompts.
+
+Two options help if prompts are still cut or missing:
+
+* **Take over on every new maneuver** (default on). Off: the player is only
+  restarted after the music app took the display (new song, resumed music).
+  Independently, take-overs on new maneuvers are at least 5 s apart.
+* **Report every new maneuver as a new track** (default on). Some car stereos
+  mute for a moment on a track change. Off: one constant media id.
+
+### Album art (optional)
+
+Cars only fetch cover art (AVRCP 1.6, Bluetooth image transfer) when a new
+track starts, so every new picture gets a new media id. Phone and car must
+both support Bluetooth cover art.
+
+* **Picture from the notification:** the big picture or large icon of the
+  guidance notification (Google Maps draws the maneuver arrow there), else its
+  small icon; on a contrasting background.
+* **Screenshot via screen sharing:** `ScreenCaptureService` (foreground service
+  with a `MediaProjection`, permission asked by Android on every start) sends
+  the middle square of the screen every 3/5/10 s. With the screen off, no new
+  frames arrive and the last picture stays.
 
 **Music title in the first line (optional, Takeover only):** the first line
 alternates between the maneuver (6 s) and `♪ Artist – Title` of the playing

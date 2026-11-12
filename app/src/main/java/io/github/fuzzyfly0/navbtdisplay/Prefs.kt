@@ -15,6 +15,17 @@ enum class DisplayMode {
     PASSIVE,
 }
 
+/** Where the album art sent to the car comes from. */
+enum class ArtMode {
+    OFF,
+
+    /** The maneuver arrow (large icon / picture) of the navigation notification. */
+    NOTIFICATION,
+
+    /** A screenshot via screen sharing (MediaProjection), refreshed every few seconds. */
+    SCREEN,
+}
+
 class Prefs(context: Context) {
     val sp: SharedPreferences =
         context.applicationContext.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -37,6 +48,25 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_ROTATE_MUSIC, false)
         set(v) = sp.edit().putBoolean(KEY_ROTATE_MUSIC, v).apply()
 
+    /** Restart the silent player on every new maneuver; off: only after the music app took the display. */
+    var reclaimOnManeuver: Boolean
+        get() = sp.getBoolean(KEY_RECLAIM_ON_MANEUVER, true)
+        set(v) = sp.edit().putBoolean(KEY_RECLAIM_ON_MANEUVER, v).apply()
+
+    /** Report every new maneuver to the car as a new track (new media id). */
+    var newTrackPerManeuver: Boolean
+        get() = sp.getBoolean(KEY_NEW_TRACK_PER_MANEUVER, true)
+        set(v) = sp.edit().putBoolean(KEY_NEW_TRACK_PER_MANEUVER, v).apply()
+
+    var artMode: ArtMode
+        get() = runCatching { ArtMode.valueOf(sp.getString(KEY_ART_MODE, null)!!) }.getOrDefault(ArtMode.OFF)
+        set(v) = sp.edit().putString(KEY_ART_MODE, v.name).apply()
+
+    /** How often a new screenshot is sent in [ArtMode.SCREEN]. */
+    var artIntervalSec: Int
+        get() = sp.getInt(KEY_ART_INTERVAL, 5)
+        set(v) = sp.edit().putInt(KEY_ART_INTERVAL, v).apply()
+
     var debugLog: Boolean
         get() = sp.getBoolean(KEY_DEBUG_LOG, true)
         set(v) = sp.edit().putBoolean(KEY_DEBUG_LOG, v).apply()
@@ -53,6 +83,10 @@ class Prefs(context: Context) {
         const val KEY_APPS = "enabled_apps"
         const val KEY_MODE = "mode"
         const val KEY_ROTATE_MUSIC = "rotate_music"
+        const val KEY_RECLAIM_ON_MANEUVER = "reclaim_on_maneuver"
+        const val KEY_NEW_TRACK_PER_MANEUVER = "new_track_per_maneuver"
+        const val KEY_ART_MODE = "art_mode"
+        const val KEY_ART_INTERVAL = "art_interval"
         const val KEY_DEBUG_LOG = "debug_log"
         const val KEY_LAST_HINT = "last_hint"
     }

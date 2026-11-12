@@ -1,13 +1,18 @@
 package io.github.fuzzyfly0.navbtdisplay
 
+import android.Manifest
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -21,6 +26,8 @@ class MainActivity : Activity() {
     private lateinit var accessStatus: TextView
     private lateinit var lastHint: TextView
     private lateinit var logPreview: TextView
+    private lateinit var captureButton: Button
+    private val handler = Handler(Looper.getMainLooper())
 
     private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         if (key == Prefs.KEY_LAST_HINT) runOnUiThread(::refreshDynamic)
@@ -69,6 +76,48 @@ class MainActivity : Activity() {
             }
         }
 
+        findViewById<Switch>(R.id.reclaim_on_maneuver).apply {
+            isChecked = prefs.reclaimOnManeuver
+            setOnCheckedChangeListener { _, on -> prefs.reclaimOnManeuver = on }
+        }
+        findViewById<Switch>(R.id.new_track_per_maneuver).apply {
+            isChecked = prefs.newTrackPerManeuver
+            setOnCheckedChangeListener { _, on -> prefs.newTrackPerManeuver = on }
+        }
+
+        val artIds = mapOf(
+            ArtMode.OFF to R.id.art_off,
+            ArtMode.NOTIFICATION to R.id.art_notification,
+            ArtMode.SCREEN to R.id.art_screen,
+        )
+        findViewById<RadioGroup>(R.id.art_mode).apply {
+            check(artIds.getValue(prefs.artMode))
+            setOnCheckedChangeListener { _, id ->
+                val mode = artIds.entries.first { it.value == id }.key
+                prefs.artMode = mode
+                if (mode != ArtMode.SCREEN) ScreenCaptureService.stop(this@MainActivity)
+                NavPublisher.refresh(this@MainActivity)
+                refreshDynamic()
+            }
+        }
+        val intervalIds = mapOf(3 to R.id.art_interval_3, 5 to R.id.art_interval_5, 10 to R.id.art_interval_10)
+        findViewById<RadioGroup>(R.id.art_interval).apply {
+            check(intervalIds[prefs.artIntervalSec] ?: R.id.art_interval_5)
+            setOnCheckedChangeListener { _, id ->
+                prefs.artIntervalSec = intervalIds.entries.first { it.value == id }.key
+            }
+        }
+        captureButton = findViewById<Button>(R.id.screen_capture).apply {
+            setOnClickListener {
+                if (ScreenCaptureService.running) {
+                    ScreenCaptureService.stop(this@MainActivity)
+                    handler.postDelayed(::refreshDynamic, 500)
+                } else {
+                    startCapture()
+                }
+            }
+        }
+
         val appList = findViewById<LinearLayout>(R.id.apps)
         for (app in NavApps.ALL) {
             val installed = app.packages.any(::isInstalled)
@@ -111,7 +160,31 @@ class MainActivity : Activity() {
         super.onPause()
     }
 
+    private fun startCapture() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Only for the "screen sharing active" notification; capture works without it.
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), REQ_NOTIFICATIONS)
+        }
+        val mpm = getSystemService(MediaProjectionManager::class.java)
+        @Suppress("DEPRECATION")
+        startActivityForResult(mpm.createScreenCaptureIntent(), REQ_CAPTURE)
+    }
+
+    @Deprecated("Activity result API of the platform Activity")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_CAPTURE && resultCode == RESULT_OK && data != null) {
+            ScreenCaptureService.start(this, resultCode, data)
+            handler.postDelayed(::refreshDynamic, 500)
+        }
+    }
+
     private fun refreshDynamic() {
+        captureButton.visibility = if (prefs.artMode == ArtMode.SCREEN) View.VISIBLE else View.GONE
+        captureButton.setText(if (ScreenCaptureService.running) R.string.capture_stop else R.string.capture_start)
         accessStatus.setText(if (hasNotificationAccess()) R.string.access_granted else R.string.access_missing)
         lastHint.text = prefs.lastHint ?: getString(R.string.no_hint_yet)
         // Only the newest part of the log, to keep the screen responsive.
@@ -143,6 +216,11 @@ class MainActivity : Activity() {
             .putExtra(Intent.EXTRA_SUBJECT, "${getString(R.string.app_name)} debug log")
             .putExtra(Intent.EXTRA_TEXT, DebugLog.read(this).takeLast(100_000))
         startActivity(Intent.createChooser(send, getString(R.string.share_log)))
+    }
+
+    private companion object {
+        const val REQ_CAPTURE = 1
+        const val REQ_NOTIFICATIONS = 2
     }
 
     private fun isInstalled(pkg: String): Boolean = runCatching {
