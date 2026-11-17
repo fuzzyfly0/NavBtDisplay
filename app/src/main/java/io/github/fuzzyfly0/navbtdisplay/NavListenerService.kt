@@ -18,6 +18,7 @@ class NavListenerService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         DebugLog.log(this, "listener disconnected")
+        LiveHint.clear()
         NavPublisher.stop(this)
     }
 
@@ -29,10 +30,12 @@ class NavListenerService : NotificationListenerService() {
             DebugLog.log(this, "posted " + NotificationDump.describe(this, sbn))
             val car = NavText.composeWarning(app.label, NotificationDump.fields(this, sbn, app.label)) ?: return
             DebugLog.log(this, "warning title='${car.title}' artist='${car.artist}' key='${car.maneuverKey}'")
+            LiveHint.onWarning(app.label, car)
             NavPublisher.onWarning(this, sbn.key, car)
             return
         }
         if (!enabled) {
+            LiveHint.onGuidanceEnded(sbn.key)
             NavPublisher.onGuidanceEnded(this, sbn.key)
             return
         }
@@ -43,6 +46,7 @@ class NavListenerService : NotificationListenerService() {
         if (Prefs(this).artMode == ArtMode.NOTIFICATION) {
             NavPublisher.onArt(this, ArtMode.NOTIFICATION, runCatching { ArtImages.fromNotification(this, sbn) }.getOrNull())
         }
+        LiveHint.onGuidance(sbn.key, app.label, car)
         NavPublisher.onGuidance(this, sbn.key, car)
     }
 
@@ -50,6 +54,9 @@ class NavListenerService : NotificationListenerService() {
         val app = NavApps.forPackage(sbn.packageName) ?: return
         DebugLog.log(this, "removed pkg=${sbn.packageName} id=${sbn.id} tag=${sbn.tag}")
         // A warning stays on the display for its full time, even if the heads-up is gone.
-        if (app.kind == NavApp.Kind.NAVIGATION) NavPublisher.onGuidanceEnded(this, sbn.key)
+        if (app.kind == NavApp.Kind.NAVIGATION) {
+            LiveHint.onGuidanceEnded(sbn.key)
+            NavPublisher.onGuidanceEnded(this, sbn.key)
+        }
     }
 }

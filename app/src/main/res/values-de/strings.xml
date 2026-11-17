@@ -50,6 +50,14 @@
     <string name="dir_roundabout">Kreisverkehr</string>
     <string name="dir_destination">Ziel</string>
 
+    <string name="section_car">Android Auto</string>
+    <string name="car_hint">Mit Android Auto zeigt die App einen eigenen Bildschirm mit dem aktuellen Hinweis und der letzten Warnung. Weil die App nicht aus dem Play Store ist: in den Android-Auto-Einstellungen 10× auf die Version tippen, dann in den Entwicklereinstellungen (Menü oben rechts) „Unbekannte Quellen“ einschalten.</string>
+    <string name="car_no_guidance">Keine Navigation aktiv</string>
+    <string name="car_no_guidance_hint">Zielführung in Google Maps oder Mapy starten</string>
+    <string name="car_guidance_running">Zielführung läuft</string>
+    <string name="car_no_warning">Keine Warnung</string>
+    <string name="car_updated">aktualisiert %1$s</string>
+
     <string name="section_apps">Navigations-Apps</string>
     <string name="app_installed">installiert</string>
     <string name="app_not_installed">nicht installiert</string>

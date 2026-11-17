@@ -119,6 +119,23 @@ music app until the next maneuver.
 Some head units send "play" by themselves when the active player changes;
 that would be forwarded to the music app and may start paused music.
 
+### Android Auto screen
+
+When the phone runs Android Auto, the car shows Android Auto instead of the
+Bluetooth "now playing" text. For that case the app has its own Android Auto
+screen (`CarHintService`, Car App Library, IoT category): a text pane with the
+current maneuver and street, the trip summary and the "then" step, the latest
+Blitzer.de warning (10 s) and the source app with the time of the last update.
+It updates as soon as the navigation notification changes, at most once per
+second, and always keeps the same layout so Android Auto counts updates as
+refreshes. Switching between this screen and the map is up to the driver;
+Android Auto shows only one app full-screen.
+
+The app is not from the Play Store, so Android Auto lists it only after:
+Android Auto settings → tap the version 10 times → menu at the top right →
+developer settings → switch on **Unknown sources**. It can be tried on a PC
+with the Desktop Head Unit from the Android SDK.
+
 ### Profiles
 
 A notification listener only sees notifications of its own Android profile.
