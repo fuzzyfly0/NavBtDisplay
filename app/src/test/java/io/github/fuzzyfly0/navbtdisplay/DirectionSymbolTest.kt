@@ -76,6 +76,15 @@ class DirectionSymbolTest {
     }
 
     @Test
+    fun `status lines without distance and direction are no guidance`() {
+        // Google Maps while connected to Android Auto, without a route.
+        assertNull(NavText.compose("Google Maps", RawNavFields(title = "Mit Google Maps fahren")))
+        assertNull(NavText.compose("Google Maps", RawNavFields(title = "Hauptstraße")))
+        // A maneuver without distance still counts.
+        assertEquals("Rechts abbiegen", NavText.compose("X", RawNavFields(title = "Rechts abbiegen"))!!.title)
+    }
+
+    @Test
     fun `icon direction is used when the text has none`() {
         val car = NavText.compose(
             "Mapy.com",

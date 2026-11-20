@@ -306,6 +306,9 @@ object NavText {
 
         if (maneuver == null && distance == null) return null
         val direction = directionFromText(maneuverText) ?: clean(raw.iconDirection)
+        // Without distance and direction it is a status line, not guidance: Google Maps
+        // shows "Mit Google Maps fahren" or just the current street while no route runs.
+        if (distance == null && direction == null) return null
         val exit = if (direction == "roundabout") {
             maneuverText?.let { exitNumber.find(it)?.groupValues?.get(1)?.toIntOrNull() }
         } else {
