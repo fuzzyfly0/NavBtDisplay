@@ -87,6 +87,19 @@ Two options help if prompts are still cut or missing:
 * **Report every new maneuver as a new track** (default on). Some car stereos
   mute for a moment on a track change. Off: one constant media id.
 
+### Direction symbol
+
+A symbol for the next maneuver can be put in front of the title, e.g.
+`-> 272 m · Turn right`. It is taken from the wording ("rechts abbiegen",
+"keep left", "Kreisverkehr … 2. Ausfahrt", Czech too) or, if the text has no
+direction, from the notification icon's resource name. Setting:
+
+* **Simple characters** (default): `^ <- -> <^ ^> <v v> U O2 (*)`, which any
+  car stereo should show.
+* **Arrows**: `↑ ← → ↖ ↗ ↙ ↘ ↶ ↻2 ⚑`; some car stereos lack these glyphs and
+  show `?` or boxes. The test hint shows the chosen style.
+* **Off**.
+
 ### Album art (optional)
 
 Cars only fetch cover art (AVRCP 1.6, Bluetooth image transfer) when a new
