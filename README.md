@@ -131,10 +131,23 @@ second, and always keeps the same layout so Android Auto counts updates as
 refreshes. Switching between this screen and the map is up to the driver;
 Android Auto shows only one app full-screen.
 
-The app is not from the Play Store, so Android Auto lists it only after:
+The app is not from the Play Store, so Android Auto needs:
 Android Auto settings → tap the version 10 times → menu at the top right →
 developer settings → switch on **Unknown sources**. It can be tried on a PC
 with the Desktop Head Unit from the Android SDK.
+
+Even then, Android Auto usually hides sideloaded *template* apps: they are
+checked against an allowlist of package name and signing certificate, and
+"Unknown sources" only lets *media* apps through (see
+[Vela issue #86](https://github.com/PimpinPumpkin/Vela/issues/86); faking the
+installer does not help). The template screen was seen with the Desktop Head
+Unit, but not reliably in the launcher.
+
+Therefore the app is also a **media app** (`AutoMediaService`). In the media
+launcher, "Nav BT Display" shows the hint in the "now playing" view:
+title = distance + maneuver, artist = street, album = trip summary; a
+Blitzer.de warning replaces the title for 10 s. Its session exists only while
+Android Auto is connected, never plays audio and stays paused.
 
 ### Profiles
 
