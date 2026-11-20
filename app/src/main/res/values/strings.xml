@@ -54,7 +54,7 @@
     <string name="section_car">Android Auto</string>
     <string name="car_hint">With Android Auto, the app shows its own screen with the current hint and the latest warning. Because the app is not from the Play Store: in the Android Auto settings tap the version 10 times, then switch on \"Unknown sources\" in the developer settings (menu at the top right).</string>
     <string name="car_no_guidance">No navigation running</string>
-    <string name="car_no_guidance_hint">Start guidance in Google Maps or Mapy</string>
+    <string name="car_no_guidance_hint">Start guidance in Google Maps, Mapy or Vela</string>
     <string name="car_guidance_running">Guidance running</string>
     <string name="car_no_warning">No warning</string>
     <string name="car_updated">updated %1$s</string>

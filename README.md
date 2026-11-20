@@ -164,6 +164,7 @@ device (Settings → *Debug* log, or `adb logcat -s NavBtDisplay`).
 |---|---|---|
 | Google Maps | `com.google.android.apps.maps` | not yet verified |
 | Mapy.com | `cz.seznam.mapy` | not yet verified |
+| Vela Maps | `app.vela` | not yet verified (Vela itself is not allowed in Android Auto, see below) |
 | Blitzer.de (warnings) | `de.blitzer`, `de.blitzer.plus`, `net.graphmasters.blitzerdex` | not yet verified |
 
 Warning apps such as Blitzer.de run next to the navigation. A notification line
