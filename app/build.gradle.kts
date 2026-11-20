@@ -20,6 +20,11 @@ android {
         }
     }
 
+    lint {
+        // AutoMediaService only shows the navigation hint; there is nothing to search or play.
+        disable += setOf("MissingIntentFilterForMediaSearch", "MissingOnPlayFromSearch")
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

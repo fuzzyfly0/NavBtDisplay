@@ -58,6 +58,17 @@
             </intent-filter>
         </service>
 
+        <!-- The same hint as a media app ("now playing"); listed by Android Auto without the Play Store check. -->
+        <service
+            android:name=".AutoMediaService"
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />
