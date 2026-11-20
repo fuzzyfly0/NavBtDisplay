@@ -12,6 +12,7 @@ import android.media.session.MediaController
 import android.media.session.MediaSession
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import androidx.car.app.connection.CarConnection
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
@@ -101,8 +102,34 @@ object NavPublisher {
     private val rotateRunnable = Runnable(::rotate)
     private val reclaimRunnable = Runnable(::reclaim)
 
+    /** True while Android Auto (or Automotive) projects; then the car shows Android Auto, not the Bluetooth text. */
+    private var projecting = false
+    private var carConnectionWatched = false
+
     private fun init(context: Context) {
-        if (!::appContext.isInitialized) appContext = context.applicationContext
+        if (::appContext.isInitialized) return
+        appContext = context.applicationContext
+        watchCarConnection()
+    }
+
+    /**
+     * Observes whether Android Auto is projecting. While it is, the car shows the
+     * Android Auto UI (and Nav BT Display's media entry), so the Bluetooth takeover
+     * with silent audio only competes with the music and is switched off.
+     */
+    private fun watchCarConnection() {
+        if (carConnectionWatched) return
+        carConnectionWatched = true
+        runCatching {
+            CarConnection(appContext).type.observeForever { type ->
+                val now = type == CarConnection.CONNECTION_TYPE_PROJECTION ||
+                    type == CarConnection.CONNECTION_TYPE_NATIVE
+                if (now == projecting) return@observeForever
+                projecting = now
+                DebugLog.log(appContext, "android auto projecting=$now")
+                if (now) release("android auto connected") else current?.let { show() }
+            }
+        }.onFailure { DebugLog.log(appContext, "car connection watch failed: $it") }
     }
 
     /** A guidance notification was posted or updated. */
@@ -112,6 +139,9 @@ object NavPublisher {
         guidanceKey = notificationKey
         current = car
         if (warning == null) Prefs(appContext).lastHint = hintText(car)
+
+        // While Android Auto is up, LiveHint feeds the media entry; keep off the car's audio.
+        if (projecting) return
 
         when (Prefs(appContext).mode) {
             DisplayMode.PASSIVE -> {
@@ -170,6 +200,7 @@ object NavPublisher {
         if (!isNew && warning == null) return
         warning = car
         Prefs(appContext).lastHint = hintText(car)
+        if (projecting) return
         if (isNew) {
             DebugLog.log(appContext, "show warning from $notificationKey")
             if (Prefs(appContext).mode == DisplayMode.PASSIVE) {
