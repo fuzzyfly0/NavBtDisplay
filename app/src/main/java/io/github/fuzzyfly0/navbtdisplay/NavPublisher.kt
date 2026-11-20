@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
+import android.media.MediaDescription
 import android.media.MediaMetadata
 import android.media.session.MediaController
 import android.media.session.MediaSession
@@ -80,6 +81,15 @@ object NavPublisher {
     private var artVersion = 0
     private var sentMediaId: String? = null
     private var sentArt: Bitmap? = null
+
+    /**
+     * Id of the single queue item and of the active queue item in the playback state.
+     * Android's AVRCP reports this id to the car as the current track; without a
+     * queue it reports an empty id, and many car stereos then never re-read the text.
+     */
+    private var queueId = 1L
+    private var sentText: String? = null
+    private var playState = PlaybackState.STATE_PAUSED
 
     private var audioLogged: String? = null
     private var audioCallbackRegistered = false
@@ -334,6 +344,7 @@ object NavPublisher {
         rotationRunning = false
         sentMediaId = null
         sentArt = null
+        sentText = null
         detachMusic()
         unwatchAudioPlayers()
         silence?.stop()
@@ -479,10 +490,12 @@ object NavPublisher {
     }
 
     private fun setPlaybackState(state: Int) {
+        playState = state
         session?.setPlaybackState(state(state))
     }
 
     private fun state(state: Int): PlaybackState = PlaybackState.Builder()
+        .setActiveQueueItemId(queueId)
         .setActions(
             PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PAUSE or
                 PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_STOP or
@@ -520,8 +533,38 @@ object NavPublisher {
         val bitmap = if (hold) sentArt else wantedArt
         handler.removeCallbacks(voiceRetryRunnable)
         if (hold) handler.postDelayed(voiceRetryRunnable, VOICE_POLL_MS)
+
+        // The car only re-reads the text when the current track id changes: a new
+        // queue id for every new text (option) or at least for every new media id.
+        // Like the media id, the track id does not change during a voice prompt.
+        val text = "${car.title}\n${car.artist}\n${car.album}"
+        val textChanged = prefs.newTrackPerUpdate && text != sentText
+        val voiceHold = textChanged && sentText != null && navVoiceActive()
+        if (id != sentMediaId || (textChanged && !voiceHold)) {
+            queueId++
+            sentText = text
+        }
+        if (voiceHold) {
+            handler.removeCallbacks(voiceRetryRunnable)
+            handler.postDelayed(voiceRetryRunnable, VOICE_POLL_MS)
+        }
+
         sentMediaId = id
         sentArt = bitmap
+        s.setQueue(
+            listOf(
+                MediaSession.QueueItem(
+                    MediaDescription.Builder()
+                        .setMediaId(id)
+                        .setTitle(car.title)
+                        .setSubtitle(car.artist)
+                        .setDescription(car.album)
+                        .build(),
+                    queueId,
+                ),
+            ),
+        )
+        s.setPlaybackState(state(playState))
         s.setMetadata(
             MediaMetadata.Builder()
                 .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, id)

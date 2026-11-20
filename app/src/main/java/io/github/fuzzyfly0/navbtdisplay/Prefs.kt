@@ -53,6 +53,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_RECLAIM_ON_MANEUVER, true)
         set(v) = sp.edit().putBoolean(KEY_RECLAIM_ON_MANEUVER, v).apply()
 
+    /** Report every text change (counting-down distance) as a new track, so car stereos re-read it. */
+    var newTrackPerUpdate: Boolean
+        get() = sp.getBoolean(KEY_NEW_TRACK_PER_UPDATE, true)
+        set(v) = sp.edit().putBoolean(KEY_NEW_TRACK_PER_UPDATE, v).apply()
+
     /** Report every new maneuver to the car as a new track (new media id). */
     var newTrackPerManeuver: Boolean
         get() = sp.getBoolean(KEY_NEW_TRACK_PER_MANEUVER, true)
@@ -90,6 +95,7 @@ class Prefs(context: Context) {
         const val KEY_ROTATE_MUSIC = "rotate_music"
         const val KEY_RECLAIM_ON_MANEUVER = "reclaim_on_maneuver"
         const val KEY_NEW_TRACK_PER_MANEUVER = "new_track_per_maneuver"
+        const val KEY_NEW_TRACK_PER_UPDATE = "new_track_per_update"
         const val KEY_SYMBOL_STYLE = "symbol_style"
         const val KEY_ART_MODE = "art_mode"
         const val KEY_ART_INTERVAL = "art_interval"

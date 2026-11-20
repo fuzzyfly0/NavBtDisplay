@@ -80,6 +80,10 @@ class MainActivity : Activity() {
             isChecked = prefs.reclaimOnManeuver
             setOnCheckedChangeListener { _, on -> prefs.reclaimOnManeuver = on }
         }
+        findViewById<Switch>(R.id.new_track_per_update).apply {
+            isChecked = prefs.newTrackPerUpdate
+            setOnCheckedChangeListener { _, on -> prefs.newTrackPerUpdate = on }
+        }
         findViewById<Switch>(R.id.new_track_per_maneuver).apply {
             isChecked = prefs.newTrackPerManeuver
             setOnCheckedChangeListener { _, on -> prefs.newTrackPerManeuver = on }

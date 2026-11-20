@@ -19,6 +19,7 @@
 
     <string name="section_voice">Voice prompts</string>
     <string name="reclaim_on_maneuver">Take over the display again on every new maneuver (off: only after the music app took it, e.g. new song)</string>
+    <string name="new_track_per_update">Report every text change (distance) as a new track, so the car stereo updates the text (switch off if the stereo flickers or mutes)</string>
     <string name="new_track_per_maneuver">Report every new maneuver to the car as a new track (switch off if prompts are cut: some car stereos mute briefly on a track change)</string>
     <string name="voice_hint">While a voice prompt plays, the app never restarts its player and never reports a new track.</string>
 

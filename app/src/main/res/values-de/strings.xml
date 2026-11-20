@@ -18,6 +18,7 @@
 
     <string name="section_voice">Ansagen</string>
     <string name="reclaim_on_maneuver">Bei jedem neuen Manöver das Display neu übernehmen (aus: nur, wenn die Musik-App es übernommen hat, z. B. neues Lied)</string>
+    <string name="new_track_per_update">Jede Textänderung (Entfernung) als neuen Titel melden, damit das Radio den Text aktualisiert (ausschalten, wenn das Radio flackert oder stummschaltet)</string>
     <string name="new_track_per_maneuver">Jedes neue Manöver dem Auto als neuen Titel melden (ausschalten, wenn Ansagen abgehackt sind: manche Radios schalten bei einem Titelwechsel kurz stumm)</string>
     <string name="voice_hint">Während einer Ansage startet die App ihren Player nie neu und meldet keinen neuen Titel.</string>
 

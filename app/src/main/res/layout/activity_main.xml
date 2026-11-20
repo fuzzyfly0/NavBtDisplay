@@ -94,6 +94,13 @@
             android:paddingTop="8dp"
             android:text="@string/new_track_per_maneuver" />
 
+        <Switch
+            android:id="@+id/new_track_per_update"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="@string/new_track_per_update" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
