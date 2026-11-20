@@ -72,9 +72,10 @@ object NotificationDump {
             bigText = cs(Notification.EXTRA_BIG_TEXT),
             subText = cs(Notification.EXTRA_SUB_TEXT),
             infoText = cs(Notification.EXTRA_INFO_TEXT),
-            iconManeuver = iconNames(context, sbn).firstNotNullOfOrNull(NavText::directionKey)
-                ?.let { directionLabel(context, it) },
-        )
+        ).let { r ->
+            val key = iconNames(context, sbn).firstNotNullOfOrNull(NavText::directionKey)
+            r.copy(iconManeuver = key?.let { directionLabel(context, it) }, iconDirection = key)
+        }
         if (NavText.extrasHaveManeuver(raw, appLabel)) return raw
         @Suppress("DEPRECATION")
         val rv = n.bigContentView ?: n.contentView ?: return raw

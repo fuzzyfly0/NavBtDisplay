@@ -14,7 +14,20 @@ data class RawNavFields(
      * Some apps (Mapy.com) show the direction only as an arrow icon, not as text.
      */
     val iconManeuver: String? = null,
+    /** Direction key from the icon's resource name (see [NavText.directionKey]), e.g. "right". */
+    val iconDirection: String? = null,
 )
+
+/** How the direction of the next maneuver is shown in front of the title. */
+enum class SymbolStyle {
+    OFF,
+
+    /** Plain characters (^ <- ->) that every car stereo can show. */
+    ASCII,
+
+    /** Unicode arrows (↑ ← →); not every car stereo has them in its font. */
+    ARROWS,
+}
 
 /** The guidance split into its parts; every part is optional. */
 data class NavInfo(
@@ -28,6 +41,10 @@ data class NavInfo(
     val summary: String? = null,
     /** The maneuver after the next one, e.g. "Dann links abbiegen". */
     val then: String? = null,
+    /** Direction key of the next maneuver ("right", "roundabout", ...), see [NavText.directionKey]. */
+    val direction: String? = null,
+    /** Exit number in a roundabout, if the text names one. */
+    val roundaboutExit: Int? = null,
 )
 
 /**
@@ -154,6 +171,71 @@ object NavText {
         }
     }
 
+    private fun words(vararg w: String) = Regex("(?:^|[^\\p{L}])(?:${w.joinToString("|")})(?:$|[^\\p{L}])", RegexOption.IGNORE_CASE)
+
+    private val dirLeft = words("links", "left", "vlevo", "doleva")
+    private val dirRight = words("rechts", "right", "vpravo", "doprava")
+    private val dirDestination = words("ziel", "zielort", "destination", "arrive", "arrived", "cíl", "cíle", "cíli")
+    private val dirUturn = words("wenden", "u-turn", "kehrtwende", "otočte", "otočit")
+    private val dirRoundabout = Regex("kreisverkehr|roundabout|kruhov", RegexOption.IGNORE_CASE)
+    private val dirSharp = words("scharf", "sharp", "ostře", "prudce")
+    private val dirSlight = words("leicht", "slight", "slightly", "mírně", "bear")
+    private val dirKeep = words("halten", "keep", "držte", "zůstaňte")
+    private val dirExit = words("ausfahrt", "abfahrt", "exit", "ramp", "sjezd", "sjezdu", "výjezd", "výjezdu")
+    private val dirStraight = words(
+        "geradeaus", "straight", "continue", "weiter", "fahren sie los", "losfahren", "head", "depart",
+        "rovně", "pokračujte", "vyjeďte",
+    )
+    private val exitNumber = Regex(
+        "(\\d+)\\s*\\.?\\s*(?:st|nd|rd|th)?\\s*(?:ausfahrt|exit|výjezd|sjezd)",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /**
+     * Direction key (same keys as [directionKey]) from the wording of a maneuver,
+     * e.g. "Rechts abbiegen" → "right", "Im Kreisverkehr die 2. Ausfahrt" → "roundabout".
+     */
+    fun directionFromText(text: String?): String? {
+        val t = text ?: return null
+        val side = when {
+            dirLeft.containsMatchIn(t) -> "left"
+            dirRight.containsMatchIn(t) -> "right"
+            else -> null
+        }
+        return when {
+            dirDestination.containsMatchIn(t) -> "destination"
+            dirUturn.containsMatchIn(t) -> "uturn"
+            dirRoundabout.containsMatchIn(t) -> "roundabout"
+            side != null && dirSharp.containsMatchIn(t) -> "sharp_$side"
+            side != null && dirSlight.containsMatchIn(t) -> "slight_$side"
+            side != null && dirKeep.containsMatchIn(t) -> "keep_$side"
+            side != null && dirExit.containsMatchIn(t) -> "exit_$side"
+            side != null -> side
+            dirStraight.containsMatchIn(t) -> "straight"
+            else -> null
+        }
+    }
+
+    /** The symbol for a direction key in the chosen style, or `null` for [SymbolStyle.OFF] / unknown keys. */
+    fun symbol(direction: String?, roundaboutExit: Int?, style: SymbolStyle): String? {
+        if (direction == null || style == SymbolStyle.OFF) return null
+        val ascii = style == SymbolStyle.ASCII
+        val base = when (direction) {
+            "straight" -> if (ascii) "^" else "↑"
+            "left" -> if (ascii) "<-" else "←"
+            "right" -> if (ascii) "->" else "→"
+            "slight_left", "keep_left", "exit_left" -> if (ascii) "<^" else "↖"
+            "slight_right", "keep_right", "exit_right" -> if (ascii) "^>" else "↗"
+            "sharp_left" -> if (ascii) "<v" else "↙"
+            "sharp_right" -> if (ascii) "v>" else "↘"
+            "uturn" -> if (ascii) "U" else "↶"
+            "roundabout" -> if (ascii) "O" else "↻"
+            "destination" -> if (ascii) "(*)" else "⚑"
+            else -> return null
+        }
+        return if (direction == "roundabout" && roundaboutExit != null) "$base$roundaboutExit" else base
+    }
+
     private fun bigLines(raw: RawNavFields) = raw.bigText?.lineSequence()?.mapNotNull(::clean)?.toList().orEmpty()
 
     private fun extras(raw: RawNavFields, appLabel: String?) = listOfNotNull(
@@ -194,6 +276,8 @@ object NavText {
                 maneuver = suffix.groupValues[1]
             }
         }
+        // Full maneuver wording (incl. street) for the direction symbol.
+        val maneuverText = maneuver
         val summary = useful(raw.subText, appLabel)
             ?: useful(raw.infoText, appLabel)
             ?: candidates.firstOrNull { it != maneuver && !isDistance(it) && isSummary(it) }
@@ -221,7 +305,21 @@ object NavText {
         }
 
         if (maneuver == null && distance == null) return null
-        return NavInfo(distance = distance, maneuver = maneuver, street = street, summary = summary, then = then)
+        val direction = directionFromText(maneuverText) ?: clean(raw.iconDirection)
+        val exit = if (direction == "roundabout") {
+            maneuverText?.let { exitNumber.find(it)?.groupValues?.get(1)?.toIntOrNull() }
+        } else {
+            null
+        }
+        return NavInfo(
+            distance = distance,
+            maneuver = maneuver,
+            street = street,
+            summary = summary,
+            then = then,
+            direction = direction,
+            roundaboutExit = exit,
+        )
     }
 
     /**
@@ -229,9 +327,11 @@ object NavText {
      * (plus the following maneuver). Missing parts move up, so the most important
      * information is always in the title; unknown fields stay empty.
      */
-    fun compose(appLabel: String, raw: RawNavFields): CarText? {
+    fun compose(appLabel: String, raw: RawNavFields, symbols: SymbolStyle = SymbolStyle.OFF): CarText? {
         val info = parse(raw, appLabel) ?: return null
-        val title = listOfNotNull(info.distance, info.maneuver).joinToString(" · ")
+        val text = listOfNotNull(info.distance, info.maneuver).joinToString(" · ")
+        val title = listOfNotNull(symbol(info.direction, info.roundaboutExit, symbols), text.ifEmpty { null })
+            .joinToString(" ")
         val lower = listOfNotNull(info.street, info.summary, info.then)
         return CarText(
             title = title,
