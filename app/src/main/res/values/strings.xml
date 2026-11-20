@@ -22,6 +22,10 @@
     <string name="new_track_per_maneuver">Report every new maneuver to the car as a new track (switch off if prompts are cut: some car stereos mute briefly on a track change)</string>
     <string name="voice_hint">While a voice prompt plays, the app never restarts its player and never reports a new track.</string>
 
+    <string name="section_symbols">Direction symbol in front of the title</string>
+    <string name="symbol_off">Off</string>
+    <string name="symbol_ascii">Simple characters (^ &lt;- -&gt; O2), should work on every car stereo</string>
+    <string name="symbol_arrows">Arrows (↑ ← → ↻2), not every car stereo can show them</string>
     <string name="section_art">Album art</string>
     <string name="art_off">Off</string>
     <string name="art_notification">Picture from the navigation notification (maneuver arrow)</string>

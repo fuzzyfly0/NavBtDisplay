@@ -105,6 +105,37 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="16dp"
+            android:text="@string/section_symbols" />
+
+        <RadioGroup
+            android:id="@+id/symbol_style"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RadioButton
+                android:id="@+id/symbol_off"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/symbol_off" />
+
+            <RadioButton
+                android:id="@+id/symbol_ascii"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/symbol_ascii" />
+
+            <RadioButton
+                android:id="@+id/symbol_arrows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/symbol_arrows" />
+        </RadioGroup>
+
+        <TextView
+            style="@android:style/TextAppearance.DeviceDefault.Medium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="16dp"
             android:text="@string/section_art" />
 
         <RadioGroup

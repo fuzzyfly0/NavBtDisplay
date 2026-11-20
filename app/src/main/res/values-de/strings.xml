@@ -21,6 +21,10 @@
     <string name="new_track_per_maneuver">Jedes neue Manöver dem Auto als neuen Titel melden (ausschalten, wenn Ansagen abgehackt sind: manche Radios schalten bei einem Titelwechsel kurz stumm)</string>
     <string name="voice_hint">Während einer Ansage startet die App ihren Player nie neu und meldet keinen neuen Titel.</string>
 
+    <string name="section_symbols">Richtungszeichen vor dem Titel</string>
+    <string name="symbol_off">Aus</string>
+    <string name="symbol_ascii">Einfache Zeichen (^ &lt;- -&gt; O2), sollten auf jedem Radio gehen</string>
+    <string name="symbol_arrows">Pfeile (↑ ← → ↻2), nicht jedes Radio kann sie anzeigen</string>
     <string name="section_art">Albumcover</string>
     <string name="art_off">Aus</string>
     <string name="art_notification">Bild aus der Navi-Benachrichtigung (Abbiegepfeil)</string>

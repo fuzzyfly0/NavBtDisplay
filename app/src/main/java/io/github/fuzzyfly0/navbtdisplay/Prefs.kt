@@ -58,6 +58,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_NEW_TRACK_PER_MANEUVER, true)
         set(v) = sp.edit().putBoolean(KEY_NEW_TRACK_PER_MANEUVER, v).apply()
 
+    var symbolStyle: SymbolStyle
+        get() = runCatching { SymbolStyle.valueOf(sp.getString(KEY_SYMBOL_STYLE, null)!!) }
+            .getOrDefault(SymbolStyle.ASCII)
+        set(v) = sp.edit().putString(KEY_SYMBOL_STYLE, v.name).apply()
+
     var artMode: ArtMode
         get() = runCatching { ArtMode.valueOf(sp.getString(KEY_ART_MODE, null)!!) }.getOrDefault(ArtMode.OFF)
         set(v) = sp.edit().putString(KEY_ART_MODE, v.name).apply()
@@ -85,6 +90,7 @@ class Prefs(context: Context) {
         const val KEY_ROTATE_MUSIC = "rotate_music"
         const val KEY_RECLAIM_ON_MANEUVER = "reclaim_on_maneuver"
         const val KEY_NEW_TRACK_PER_MANEUVER = "new_track_per_maneuver"
+        const val KEY_SYMBOL_STYLE = "symbol_style"
         const val KEY_ART_MODE = "art_mode"
         const val KEY_ART_INTERVAL = "art_interval"
         const val KEY_DEBUG_LOG = "debug_log"

@@ -200,7 +200,10 @@ object NavPublisher {
         takeOver()
         setMetadata(
             CarText(
-                title = appContext.getString(R.string.test_hint_title),
+                title = listOfNotNull(
+                    NavText.symbol("right", null, Prefs(appContext).symbolStyle),
+                    appContext.getString(R.string.test_hint_title),
+                ).joinToString(" "),
                 artist = appContext.getString(R.string.test_hint_artist),
                 album = appContext.getString(R.string.test_hint_album),
                 maneuverKey = "test",

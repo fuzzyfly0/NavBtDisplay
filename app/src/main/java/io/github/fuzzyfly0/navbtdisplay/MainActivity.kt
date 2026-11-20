@@ -85,6 +85,17 @@ class MainActivity : Activity() {
             setOnCheckedChangeListener { _, on -> prefs.newTrackPerManeuver = on }
         }
 
+        val symbolIds = mapOf(
+            SymbolStyle.OFF to R.id.symbol_off,
+            SymbolStyle.ASCII to R.id.symbol_ascii,
+            SymbolStyle.ARROWS to R.id.symbol_arrows,
+        )
+        findViewById<RadioGroup>(R.id.symbol_style).apply {
+            check(symbolIds.getValue(prefs.symbolStyle))
+            // Applies with the next update of the navigation notification.
+            setOnCheckedChangeListener { _, id -> prefs.symbolStyle = symbolIds.entries.first { it.value == id }.key }
+        }
+
         val artIds = mapOf(
             ArtMode.OFF to R.id.art_off,
             ArtMode.NOTIFICATION to R.id.art_notification,
