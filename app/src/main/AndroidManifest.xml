@@ -12,6 +12,7 @@
         <package android:name="com.google.android.apps.maps" />
         <package android:name="cz.seznam.mapy" />
         <package android:name="app.vela" />
+        <package android:name="com.here.app.maps" />
         <package android:name="de.blitzer" />
         <package android:name="de.blitzer.plus" />
         <package android:name="net.graphmasters.blitzerdex" />
