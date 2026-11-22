@@ -178,7 +178,7 @@ device (Settings → *Debug* log, or `adb logcat -s NavBtDisplay`).
 | Google Maps | `com.google.android.apps.maps` | not yet verified |
 | Mapy.com | `cz.seznam.mapy` | not yet verified |
 | Vela Maps | `app.vela` | works: title "In 300 m · Turn right onto Main St", text "1 h 20 min · 95 km · Arrival 11:21" (Vela itself is not allowed in Android Auto, see below) |
-| HERE WeGo | `com.here.app.maps` | not yet verified |
+| HERE WeGo | `com.here.app.maps` | **no guidance**: only a static "Sprachnavigation · Tippen Sie, um zu HERE WeGo zurückzukehren" notification that never changes |
 | Blitzer.de (warnings) | `de.blitzer`, `de.blitzer.plus`, `net.graphmasters.blitzerdex` | not yet verified |
 
 Warning apps such as Blitzer.de run next to the navigation. A notification line
