@@ -178,7 +178,6 @@ device (Settings → *Debug* log, or `adb logcat -s NavBtDisplay`).
 | Google Maps | `com.google.android.apps.maps` | not yet verified |
 | Mapy.com | `cz.seznam.mapy` | not yet verified |
 | Vela Maps | `app.vela` | works: title "In 300 m · Turn right onto Main St", text "1 h 20 min · 95 km · Arrival 11:21" (Vela itself is not allowed in Android Auto, see below) |
-| HERE WeGo | `com.here.app.maps` | **no guidance**: only a static "Sprachnavigation · Tippen Sie, um zu HERE WeGo zurückzukehren" notification that never changes |
 | Blitzer.de (warnings) | `de.blitzer`, `de.blitzer.plus`, `net.graphmasters.blitzerdex` | not yet verified |
 
 Warning apps such as Blitzer.de run next to the navigation. A notification line
@@ -187,9 +186,10 @@ as `⚠ …` for 10 s in every mode, also without guidance; then the guidance (o
 the music) returns. Updates of the same warning (counting-down distance) only
 refresh the text; the status notification ("Blitzer.de ist aktiv") is ignored.
 
-Other apps (Waze, OsmAnd, Organic Maps, CoMaps) are left out of
-the first version. OsmAnd would be best supported through its official AIDL
-navigation API rather than its notification.
+Other apps (Waze, OsmAnd, Organic Maps, CoMaps) are left out for now. OsmAnd would
+be best supported through its official AIDL navigation API rather than its
+notification. HERE WeGo was tried and removed: during guidance it only shows a
+static "Sprachnavigation" notification without any maneuver, distance or street.
 
 ## Testing
 

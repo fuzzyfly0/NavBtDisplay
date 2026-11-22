@@ -26,7 +26,6 @@ object NavApps {
         NavApp("gmaps", "Google Maps", listOf("com.google.android.apps.maps")),
         NavApp("mapy", "Mapy.com", listOf("cz.seznam.mapy")),
         NavApp("vela", "Vela Maps", listOf("app.vela")),
-        NavApp("here", "HERE WeGo", listOf("com.here.app.maps")),
         NavApp(
             "blitzer",
             "Blitzer.de",
